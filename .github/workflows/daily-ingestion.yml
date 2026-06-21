@@ -31,7 +31,7 @@ jobs:
         run: python -m scheduler --once
 
       - name: Corpus status summary
-        if: always()
+        if: success()
         run: |
           python - <<'PY'
           from storage.metadata_store import MetadataStore
