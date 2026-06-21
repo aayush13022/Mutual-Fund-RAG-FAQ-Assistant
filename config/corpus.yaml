@@ -1,0 +1,127 @@
+amc: HDFC Mutual Fund
+
+sources:
+  - scheme_name: HDFC Mid Cap Fund Direct Growth
+    url: https://groww.in/mutual-funds/hdfc-mid-cap-fund-direct-growth
+    aliases: [mid cap, hdfc mid cap]
+  - scheme_name: HDFC Large Cap Fund Direct Growth
+    url: https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth
+    aliases: [large cap, hdfc large cap]
+  - scheme_name: HDFC Small Cap Fund Direct Growth
+    url: https://groww.in/mutual-funds/hdfc-small-cap-fund-direct-growth
+    aliases: [small cap, hdfc small cap]
+  - scheme_name: HDFC Gold ETF Fund of Fund Direct Plan Growth
+    url: https://groww.in/mutual-funds/hdfc-gold-etf-fund-of-fund-direct-plan-growth
+    aliases: [gold etf, gold fund of fund]
+  - scheme_name: HDFC Defence Fund Direct Growth
+    url: https://groww.in/mutual-funds/hdfc-defence-fund-direct-growth
+    aliases: [defence, defense, hdfc defence]
+
+chunking:
+  strategy: section_first
+  chunk_size_tokens: 600
+  chunk_overlap_tokens: 0
+  fund_management_split: per_manager
+  strip_other_schemes_list: true
+
+embeddings:
+  provider: bge
+  model_small: BAAI/bge-small-en-v1.5
+  model_large: BAAI/bge-large-en-v1.5
+  token_threshold: 80
+  section_model_map:
+    expense_ratio: small
+    benchmark: small
+    minimum_investment: small
+    exit_load: small
+    overview: large
+    tax: large
+    investment_objective: large
+    fund_house: large
+    fund_management: large
+  batch_size: 32
+  cache_by_text_hash: true
+
+retrieval:
+  top_k: 5
+  candidate_k: 10
+  similarity_threshold: 0.55
+  section_boost:
+    fund_management: 0.15
+    expense_ratio: 0.15
+    exit_load: 0.15
+    minimum_investment: 0.15
+    benchmark: 0.15
+    tax: 0.15
+    investment_objective: 0.15
+    overview: 0.10
+    fund_house: 0.10
+  section_keywords:
+    fund_management:
+      - fund management
+      - fund manager
+      - fund managers
+      - manager
+      - manages
+      - tenure
+      - education
+      - experience
+      - qualification
+      - who manage
+    expense_ratio:
+      - expense ratio
+    exit_load:
+      - exit load
+      - stamp duty
+      - redemption charge
+    minimum_investment:
+      - min sip
+      - minimum sip
+      - minimum investment
+      - min investment
+    benchmark:
+      - benchmark
+      - benchmark index
+    tax:
+      - tax
+      - ltcg
+      - stcg
+      - tax implication
+    investment_objective:
+      - investment objective
+      - objective of the scheme
+      - objective
+    overview:
+      - nav
+      - aum
+      - risk
+      - riskometer
+      - category
+    fund_house:
+      - amc
+      - fund house
+      - launch date
+
+llm:
+  provider: groq
+  model: llama-3.3-70b-versatile
+  temperature: 0
+  max_tokens: 256
+
+sections:
+  - overview
+  - expense_ratio
+  - exit_load
+  - minimum_investment
+  - benchmark
+  - tax
+  - fund_management
+  - investment_objective
+  - fund_house
+
+scheduler:
+  enabled: true
+  cron: "0 10 * * *"
+  timezone: Asia/Kolkata
+  max_retries: 3
+  retry_backoff_seconds: 60

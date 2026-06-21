@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mutual Fund FAQ Assistant</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<!-- Tailwind CSS with custom config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "inverse-primary": "#00639c",
+                "surface-container-high": "#232a37",
+                "on-primary-fixed": "#001d33",
+                "on-tertiary-container": "#553300",
+                "inverse-on-surface": "#2a313e",
+                "on-primary-container": "#003d64",
+                "tertiary": "#ffb95f",
+                "surface-container-highest": "#2e3542",
+                "on-secondary": "#233143",
+                "on-secondary-fixed-variant": "#39485a",
+                "on-surface-variant": "#bfc7d2",
+                "surface-container-low": "#151c28",
+                "outline": "#89919c",
+                "on-secondary-container": "#a7b6cc",
+                "error": "#ffb4ab",
+                "surface-container-lowest": "#070e1a",
+                "on-primary": "#003354",
+                "on-error": "#690005",
+                "surface-tint": "#97cbff",
+                "surface-variant": "#2e3542",
+                "tertiary-fixed": "#ffddb8",
+                "inverse-surface": "#dce2f4",
+                "secondary": "#b9c8de",
+                "primary-fixed-dim": "#97cbff",
+                "primary-fixed": "#cee5ff",
+                "secondary-fixed": "#d4e4fa",
+                "on-tertiary-fixed-variant": "#653e00",
+                "on-secondary-fixed": "#0d1c2d",
+                "background": "#0d1320",
+                "surface-container": "#19202c",
+                "surface-bright": "#333947",
+                "surface": "#0d1320",
+                "on-primary-fixed-variant": "#004a77",
+                "secondary-container": "#39485a",
+                "outline-variant": "#404751",
+                "on-tertiary": "#472a00",
+                "primary-container": "#4dabf7",
+                "tertiary-fixed-dim": "#ffb95f",
+                "primary": "#97cbff",
+                "on-tertiary-fixed": "#2a1700",
+                "on-surface": "#dce2f4",
+                "tertiary-container": "#e59300",
+                "surface-dim": "#0d1320",
+                "on-background": "#dce2f4",
+                "on-error-container": "#ffdad6",
+                "error-container": "#93000a",
+                "secondary-fixed-dim": "#b9c8de"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "base": "4px",
+                "lg": "40px",
+                "xl": "64px",
+                "md": "24px",
+                "container-max": "1280px",
+                "gutter": "24px",
+                "sm": "16px",
+                "xs": "8px",
+                "container-max-width": "800px",
+                "unit": "4px",
+                "bubble-padding-x": "16px",
+                "bubble-padding-y": "12px",
+                "chat-gap": "12px"
+        },
+        "fontFamily": {
+                "headline-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "headline-xl": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-xl": [
+                        "40px",
+                        {
+                                "lineHeight": "48px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md h-screen flex flex-col overflow-hidden selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Sticky Disclaimer Banner -->
+<div class="fixed top-0 left-0 w-full z-50 bg-tertiary/10 border-b border-tertiary/20 px-6 py-2 flex items-center justify-center gap-2 backdrop-blur-sm">
+<span class="material-symbols-outlined text-tertiary fill-1 text-[18px]">warning</span>
+<span class="font-label-md text-label-md text-on-surface">Mandatory Read: This assistant provides factual information only. Not for investment advice.</span>
+</div>
+<!-- TopAppBar (from JSON specs) -->
+<header class="fixed top-[32px] left-0 w-full z-40 flex flex-col bg-surface border-b border-outline-variant transition-all">
+<div class="flex items-center justify-between px-6 py-4">
+<!-- Brand -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">forum</span>
+</div>
+<h1 class="text-headline-md font-headline-md font-semibold text-primary">Mutual Fund FAQ Assistant</h1>
+</div>
+<!-- Navigation & Actions -->
+<div class="flex items-center gap-6">
+<nav class="flex gap-4">
+<!-- Nav Link from JSON -->
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors font-label-md text-label-md px-3 py-2 rounded-DEFAULT" href="#">Compliance</a>
+</nav>
+<div class="h-6 w-px bg-outline-variant"></div>
+<!-- Trailing Icons from JSON -->
+<div class="flex items-center gap-2">
+<button aria-label="Info" class="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
+<span class="material-symbols-outlined">info</span>
+</button>
+<button aria-label="History" class="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
+<span class="material-symbols-outlined">history</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Chat Canvas -->
+<main class="flex-1 overflow-y-auto mt-[105px] mb-[90px] pt-lg pb-xl scroll-smooth">
+<div class="max-w-container-max-width mx-auto px-4 flex flex-col gap-chat-gap">
+<!-- Date Divider -->
+<div class="flex justify-center my-4">
+<span class="text-label-md font-label-md text-outline px-3 py-1 bg-surface-container-low rounded-full">Today</span>
+</div>
+<!-- Welcome Block & Schemes List -->
+<div class="self-start max-w-[85%] bg-surface-container-lowest border border-outline-variant rounded-xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="px-bubble-padding-x py-bubble-padding-y flex flex-col gap-3">
+<p class="font-body-md text-body-md text-on-surface">Hello. I am the Mutual Fund FAQ Assistant. I can provide factual details regarding specific schemes. Currently, I am programmed with definitive data for the following HDFC funds:</p>
+<ul class="list-disc pl-5 font-body-md text-body-md text-on-surface-variant space-y-1">
+<li>HDFC Mid Cap Fund Direct Growth</li>
+<li>HDFC Large Cap Fund Direct Growth</li>
+<li>HDFC Small Cap Fund Direct Growth</li>
+<li>HDFC Gold ETF Fund of Fund Direct Plan Growth</li>
+<li>HDFC Defence Fund Direct Growth</li>
+</ul>
+</div>
+</div>
+<!-- Question Chips -->
+<div class="self-start max-w-[85%] flex flex-wrap gap-2 mt-2 mb-4 pl-2">
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-low transition-colors shadow-[0_2px_4px_rgba(0,0,0,0.01)] whitespace-nowrap">
+                    What is an Expense Ratio?
+                </button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-low transition-colors shadow-[0_2px_4px_rgba(0,0,0,0.01)] whitespace-nowrap">
+                    Compare Mid Cap vs Small Cap
+                </button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-low transition-colors shadow-[0_2px_4px_rgba(0,0,0,0.01)] whitespace-nowrap">
+                    Explain Gold ETF structure
+                </button>
+</div>
+<!-- User Bubble 1 -->
+<div class="self-end max-w-[80%] bg-primary-container text-on-primary-container px-bubble-padding-x py-bubble-padding-y rounded-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+<p class="font-body-md text-body-md">What is the expense ratio of HDFC Defence Fund Direct Growth?</p>
+</div>
+<!-- Bot Factual Answer Card -->
+<div class="self-start max-w-[85%] bg-surface-container-lowest border border-outline-variant rounded-xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="px-bubble-padding-x py-bubble-padding-y flex flex-col gap-3">
+<p class="font-body-md text-body-md text-on-surface">The expense ratio of HDFC Defence Fund Direct Growth is <strong>0.88%</strong>.</p>
+<div class="w-full h-px bg-surface-container-highest my-1"></div>
+<div class="flex flex-col gap-1">
+<a class="inline-flex items-center gap-1 font-body-sm text-body-sm text-primary hover:underline group w-fit" href="#">
+<span>View source on Groww</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">open_in_new</span>
+</a>
+<span class="font-body-sm text-body-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">update</span>
+                            Last updated from sources: 2026-06-18
+                        </span>
+</div>
+</div>
+</div>
+<!-- User Bubble 2 -->
+<div class="self-end max-w-[80%] bg-primary-container text-on-primary-container px-bubble-padding-x py-bubble-padding-y rounded-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.04)] mt-4">
+<p class="font-body-md text-body-md">Should I invest in this fund for high returns?</p>
+</div>
+<!-- Bot Refusal Card -->
+<div class="self-start max-w-[85%] bg-surface-container-lowest border border-outline-variant rounded-xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.02)] relative overflow-hidden">
+<!-- Subtle indicator line for refusal/compliance -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="px-bubble-padding-x py-bubble-padding-y pl-5 flex flex-col gap-3">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px] mt-0.5">policy</span>
+<p class="font-body-md text-body-md text-on-surface">I can only answer factual questions about mutual fund schemes. I cannot provide investment advice or recommend funds.</p>
+</div>
+<div class="w-full h-px bg-surface-container-highest my-1"></div>
+<a class="inline-flex items-center gap-1 font-body-sm text-body-sm text-primary hover:underline group w-fit" href="#">
+<span class="material-symbols-outlined text-[16px]">school</span>
+<span>Learn about investing responsibly</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Input Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant p-4 z-40">
+<div class="max-w-container-max-width mx-auto relative group">
+<input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-xl py-3 pl-4 pr-14 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow shadow-[0_2px_8px_rgba(0,0,0,0.02)] placeholder:text-outline placeholder:font-body-md" placeholder="Ask a factual question about a scheme..." type="text"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center text-primary hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+<span class="material-symbols-outlined fill-1">send</span>
+</button>
+</div>
+<div class="max-w-container-max-width mx-auto mt-2 text-center">
+<p class="font-body-sm text-body-sm text-outline">Responses are generated automatically based on factual scheme documents.</p>
+</div>
+</div>
+</body></html>

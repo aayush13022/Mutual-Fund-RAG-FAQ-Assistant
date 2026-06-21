@@ -1,0 +1,62 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+!ui/.env.local.example
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Ingestion & vector store (generated at runtime)
+data/raw/
+data/processed/
+data/chroma/
+data/metadata.db
+
+# ML model caches (downloaded on first embed/query)
+.cache/
+models/
+
+# Logs
+*.log
+logs/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Next.js / frontend (ui/)
+ui/node_modules/
+ui/.next/
+ui/out/
+ui/.env.local
+
+# Misc
+*.sqlite3-journal
+.cursor/
