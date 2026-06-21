@@ -32,17 +32,21 @@ jobs:
 
       - name: Corpus status summary
         if: success()
+        continue-on-error: true
         run: |
           python - <<'PY'
-          from storage.metadata_store import MetadataStore
+          try:
+              from storage.metadata_store import MetadataStore
 
-          metadata = MetadataStore()
-          version = metadata.get_corpus_version()
-          latest = metadata.get_latest_ingestion_run()
-          print("active_version:", version.active_version if version else None)
-          print("last_updated:", version.last_updated_from_sources if version else None)
-          if latest:
-              print("last_run_status:", latest.get("status"))
-              print("documents_processed:", latest.get("documents_processed"))
-              print("chunks_written:", latest.get("chunks_written"))
+              metadata = MetadataStore()
+              version = metadata.get_corpus_version()
+              latest = metadata.get_latest_ingestion_run()
+              print("active_version:", version.active_version if version else None)
+              print("last_updated:", version.last_updated_from_sources if version else None)
+              if latest:
+                  print("last_run_status:", latest.get("status"))
+                  print("documents_processed:", latest.get("documents_processed"))
+                  print("chunks_written:", latest.get("chunks_written"))
+          except Exception as exc:
+              print(f"Could not read corpus status summary: {exc}")
           PY
