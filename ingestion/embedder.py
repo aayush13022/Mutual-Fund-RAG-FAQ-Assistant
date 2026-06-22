@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import struct
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -59,12 +60,24 @@ class HashEmbeddingProvider(EmbeddingProvider):
 
 
 class BGEEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, config: EmbeddingConfig) -> None:
+    def __init__(self, config: EmbeddingConfig, *, keep_single_model: bool = False) -> None:
         self._config = config
         self._models: dict[str, object] = {}
+        self._keep_single_model = keep_single_model
+
+    def _release_other_models(self, model_key: str) -> None:
+        if not self._keep_single_model:
+            return
+        import gc
+
+        for key in list(self._models):
+            if key != model_key:
+                del self._models[key]
+        gc.collect()
 
     def _get_model(self, model_key: str):
         if model_key not in self._models:
+            self._release_other_models(model_key)
             from sentence_transformers import SentenceTransformer
 
             model_name = model_id_for_key(self._config, model_key)
@@ -122,20 +135,39 @@ def _hash_to_vector(text: str, dim: int) -> list[float]:
     return [value / norm for value in values]
 
 
+def _on_railway() -> bool:
+    return bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
+
+
+def _bge_keep_single_model() -> bool:
+    explicit = os.getenv("BGE_KEEP_SINGLE_MODEL")
+    if explicit is not None:
+        return explicit.lower() in {"1", "true", "yes"}
+    return _on_railway()
+
+
 @lru_cache
-def _get_embedding_provider_cached(provider: str, openai_api_key: str = "") -> EmbeddingProvider:
+def _get_embedding_provider_cached(
+    provider: str,
+    openai_api_key: str = "",
+    bge_keep_single_model: bool = False,
+) -> EmbeddingProvider:
     if provider == "hash":
         return HashEmbeddingProvider()
     if provider == "openai":
         cfg = get_settings().embeddings
         return OpenAIEmbeddingProvider(cfg, openai_api_key)
     cfg = get_settings().embeddings
-    return BGEEmbeddingProvider(cfg)
+    return BGEEmbeddingProvider(cfg, keep_single_model=bge_keep_single_model)
 
 
 def get_embedding_provider(settings: Settings | None = None) -> EmbeddingProvider:
     cfg = settings or get_settings()
-    return _get_embedding_provider_cached(cfg.embeddings.provider, cfg.openai_api_key)
+    return _get_embedding_provider_cached(
+        cfg.embeddings.provider,
+        cfg.openai_api_key,
+        _bge_keep_single_model(),
+    )
 
 
 def embed_chunks(

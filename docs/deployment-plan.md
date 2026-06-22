@@ -75,6 +75,10 @@ In **Variables**, add:
 | `LOG_LEVEL` | `INFO` | Optional |
 | `FETCH_TRUST_ENV` | `false` | Optional |
 | `CORS_ORIGINS` | `https://your-app.vercel.app` | Yes (see 1.5) |
+| `WARMUP_ON_STARTUP` | `false` | Yes on Railway (default auto-off) |
+| `BGE_KEEP_SINGLE_MODEL` | `true` | Yes on Railway (default auto-on) |
+| `TOKENIZERS_PARALLELISM` | `false` | Recommended |
+| `OMP_NUM_THREADS` | `1` | Recommended |
 
 > **Note:** Use `/data/...` paths when attaching a Railway Volume (step 1.4). If you skip the volume, use `./data/chroma` and `./data/metadata.db` — data will reset on every redeploy.
 
@@ -263,6 +267,10 @@ EMBEDDING_MODEL_LARGE=BAAI/bge-large-en-v1.5
 CHROMA_PERSIST_DIR=/data/chroma
 METADATA_DB_PATH=/data/metadata.db
 CORS_ORIGINS=https://your-app.vercel.app
+WARMUP_ON_STARTUP=false
+BGE_KEEP_SINGLE_MODEL=true
+TOKENIZERS_PARALLELISM=false
+OMP_NUM_THREADS=1
 LOG_LEVEL=INFO
 FETCH_TRUST_ENV=false
 ```

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from config.settings import Settings, get_settings
 from ingestion.embedder import embed_query, get_embedding_provider
@@ -10,6 +11,17 @@ from rag.llm import get_llm_provider
 from storage.vector_store import get_vector_store
 
 logger = logging.getLogger(__name__)
+
+
+def _warmup_embedding_model_keys(provider: str) -> tuple[str, ...]:
+    raw = os.getenv("WARMUP_EMBEDDING_MODELS", "").strip()
+    if raw:
+        return tuple(key.strip() for key in raw.split(",") if key.strip())
+    if provider == "bge":
+        return ("small",)
+    if provider == "openai":
+        return ("openai",)
+    return ()
 
 
 def warmup_rag_stack(settings: Settings | None = None) -> None:
@@ -24,16 +36,13 @@ def warmup_rag_stack(settings: Settings | None = None) -> None:
     try:
         get_vector_store()
 
-        if cfg.embeddings.provider == "bge":
-            for model_key in ("small", "large"):
+        model_keys = _warmup_embedding_model_keys(cfg.embeddings.provider)
+        if model_keys:
+            for model_key in model_keys:
                 embed_query("warmup", model_key=model_key, settings=cfg)
-            logger.info("BGE embedding models warmed up")
-        elif cfg.embeddings.provider == "openai":
-            embed_query("warmup", model_key="openai", settings=cfg)
-            logger.info("OpenAI embedding client warmed up")
+            logger.info("Embedding models warmed up: %s", ", ".join(model_keys))
         else:
-            get_embedding_provider(cfg)
-            logger.info("Embedding provider warmed up")
+            logger.info("Embedding warmup skipped; models load lazily on first request")
 
         get_llm_provider(cfg.llm.provider)
         logger.info("LLM provider warmed up")

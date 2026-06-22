@@ -2,8 +2,14 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 1"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+# Recommended Railway variables (set in dashboard Variables tab):
+# WARMUP_ON_STARTUP=false
+# BGE_KEEP_SINGLE_MODEL=true
+# TOKENIZERS_PARALLELISM=false
+# OMP_NUM_THREADS=1

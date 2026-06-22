@@ -38,8 +38,19 @@ def _allowed_origins() -> list[str]:
     return origins
 
 
+def _on_railway() -> bool:
+    return bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
+
+
 def _warmup_enabled() -> bool:
-    return os.getenv("WARMUP_ON_STARTUP", "true").lower() in {"1", "true", "yes"}
+    explicit = os.getenv("WARMUP_ON_STARTUP")
+    if explicit is not None:
+        return explicit.lower() in {"1", "true", "yes"}
+    # Default off on Railway: loading BGE models in the background still OOMs
+    # small instances and triggers restart loops.
+    if _on_railway():
+        return False
+    return True
 
 
 @asynccontextmanager
@@ -55,6 +66,12 @@ async def lifespan(_: FastAPI):
             daemon=True,
         ).start()
         logger.info("RAG warmup started in background")
+    elif _on_railway():
+        logger.info(
+            "RAG warmup disabled on Railway (set WARMUP_ON_STARTUP=true to enable); "
+            "BGE_KEEP_SINGLE_MODEL=%s",
+            os.getenv("BGE_KEEP_SINGLE_MODEL", "auto-on-railway"),
+        )
     else:
         logger.info("RAG warmup disabled (WARMUP_ON_STARTUP=false); loading lazily")
     yield
