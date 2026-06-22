@@ -103,6 +103,7 @@ In **Variables**, add:
 | `EMBEDDING_MODEL_LARGE` | `BAAI/bge-large-en-v1.5` | Yes |
 | `CHROMA_PERSIST_DIR` | `/data/chroma` | Yes (with volume) |
 | `METADATA_DB_PATH` | `/data/metadata.db` | Yes (with volume) |
+| `CHAT_HISTORY_PATH` | `/data/chat_history.json` | Yes (with volume — persists chat history) |
 | `BGE_KEEP_SINGLE_MODEL` | `true` | Recommended (lower memory) |
 | `TOKENIZERS_PARALLELISM` | `false` | Recommended |
 | `OMP_NUM_THREADS` | `1` | Recommended |
@@ -112,7 +113,8 @@ In **Variables**, add:
 > **No `CORS_ORIGINS` or `API_URL` needed** — there is only one origin now.
 >
 > **Note:** Use `/data/...` paths when attaching a Railway Volume (step 4). Without a
-> volume, use `./data/chroma` and `./data/metadata.db` — but data resets on every redeploy.
+> volume, use `./data/chroma`, `./data/metadata.db`, and `./data/chat_history.json` — but
+> this data (including saved chat history) resets on every redeploy.
 
 ### 4. Attach a persistent volume (recommended)
 
@@ -120,7 +122,8 @@ The corpus (`data/chroma/`, `data/metadata.db`) must survive redeploys.
 
 1. Railway service → **Volumes** → **Add Volume**.
 2. Mount path: `/data`
-3. Set `CHROMA_PERSIST_DIR=/data/chroma` and `METADATA_DB_PATH=/data/metadata.db`.
+3. Set `CHROMA_PERSIST_DIR=/data/chroma`, `METADATA_DB_PATH=/data/metadata.db`, and
+   `CHAT_HISTORY_PATH=/data/chat_history.json` (so saved chats survive redeploys).
 4. On first deploy, copy bundled demo data into the volume (one-time, via Railway shell):
 
 ```bash
@@ -180,6 +183,7 @@ EMBEDDING_MODEL_SMALL=BAAI/bge-small-en-v1.5
 EMBEDDING_MODEL_LARGE=BAAI/bge-large-en-v1.5
 CHROMA_PERSIST_DIR=/data/chroma
 METADATA_DB_PATH=/data/metadata.db
+CHAT_HISTORY_PATH=/data/chat_history.json
 BGE_KEEP_SINGLE_MODEL=true
 TOKENIZERS_PARALLELISM=false
 OMP_NUM_THREADS=1
@@ -224,6 +228,11 @@ FETCH_TRUST_ENV=false
 
 - Corpus may be missing on the volume. Run `python -m scheduler --once` on Railway.
 - Confirm `CHROMA_PERSIST_DIR` and `METADATA_DB_PATH` point to the mounted volume.
+
+### Chat history disappears after redeploy
+
+- Set `CHAT_HISTORY_PATH=/data/chat_history.json` and attach a `/data` volume.
+- Without a volume, the history file lives on ephemeral storage and resets each deploy.
 
 ### Railway out of memory
 

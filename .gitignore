@@ -28,6 +28,10 @@ build/
 # Data artifacts (committed for demo clone-and-run; re-ingest via scheduler locally)
 data/**/.DS_Store
 
+# Per-user chat history (runtime artifact; not committed)
+data/chat_history.json
+data/chat_history.tmp
+
 # ML model caches (downloaded on first embed/query)
 .cache/
 models/

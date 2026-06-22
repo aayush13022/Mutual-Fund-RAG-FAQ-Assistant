@@ -1257,9 +1257,11 @@ Build a simple chat page: welcome message, disclaimer, 3 example questions, and 
 > **Update — Streamlit migration:** The UI was originally built in Next.js (`ui/`) calling
 > `POST /chat`. The current deployment is a **single Streamlit app** (`streamlit_app.py`)
 > that calls the RAG pipeline **in-process** via `stapp/chat_handler.py` — no separate API,
-> no CORS. A **"Back to home"** button resets the chat to the welcome screen. The Next.js +
-> FastAPI stack remains in the repo as the legacy path. See
-> [streamlit.md](./streamlit.md) and [deployment-plan.md](./deployment-plan.md).
+> no CORS. It adds a **"What you can ask"** guide (answerable topics + sample questions), a
+> **New chat / Back to home** action, and **persistent chat history** — conversations are
+> saved to `data/chat_history.json` (via `stapp/history.py`) and browsable from a sidebar, so
+> chats survive reloads and restarts. The Next.js + FastAPI stack remains in the repo as the
+> legacy path. See [streamlit.md](./streamlit.md) and [deployment-plan.md](./deployment-plan.md).
 
 ### Goal & Scope
 
@@ -1271,22 +1273,28 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 ### UI Layout
 
 ```
-┌─────────────────────────────────────┐
-│  Disclaimer: Facts-only. No advice. │
-├─────────────────────────────────────┤
-│  Welcome message                    │
-│  Supported schemes: [5 funds]       │
-│                                     │
-│  [Example Q1] [Example Q2] [Ex Q3]  │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  Chat messages              │    │
-│  │  User: ...                  │    │
-│  │  Bot: answer + source link  │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  [ Type your question...    ] [Send]│
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  Disclaimer: Facts-only. No advice.          │
+├──────────────────────────┬──────────────────┤
+│  Title          [← Back to home] (after chat)│
+├──────────────────────────┼──────────────────┤
+│  Welcome message                             │
+│  Supported schemes  │  What you can ask:      │
+│  - 5 funds          │  - Expense ratio        │
+│                     │  - Exit load            │
+│                     │  - Fund manager … (9)   │
+│  ▸ See sample questions for each topic        │
+│                                              │
+│  [Example Q1] [Example Q2] [Example Q3]       │
+│  ┌────────────────────────────────────────┐  │
+│  │  Chat messages (user / bot + source)   │  │
+│  └────────────────────────────────────────┘  │
+│  [ Ask a factual question…              ]     │
+└─────────────────────────────────────────────┘
+
+Sidebar:  ➕ New chat
+          Previous chats: [• Expense ratio] [Exit load] …
+          🗑 Clear all history
 ```
 
 ### Tasks
@@ -1302,7 +1310,9 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 | 6.7 | Refusal styling | `st.warning` + `educational_link` button |
 | 6.8 | Loading / error | Spinner during generation; error message on failure |
 | 6.9 | RAG integration | In-process `handle_message()` (legacy: `fetch(POST /chat)`) |
-| 6.10 | Back to home | Button resets `messages` and returns to the welcome screen |
+| 6.10 | New chat / Back to home | Starts a fresh conversation while keeping previous chats |
+| 6.11 | "What you can ask" guide | List answerable topics + sample questions; `ASK_TOPICS` / `CANNOT_ASK` in `stapp/constants.py` |
+| 6.12 | Persistent chat history | Sidebar lists previous chats; saved to `data/chat_history.json` via `stapp/history.py` |
 
 ### UI Copy
 
@@ -1320,10 +1330,11 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 
 - `streamlit_app.py` — UI + in-process RAG entrypoint
 - `stapp/chat_handler.py` — guardrails + `answer()` wrapper
-- `stapp/constants.py` — UI copy (schemes, examples, disclaimer)
+- `stapp/constants.py` — UI copy (schemes, examples, disclaimer, ask guide)
+- `stapp/history.py` — persistent chat history (load/save conversations)
 - `.streamlit/config.toml` — theme + server settings
 - `docs/streamlit.md` — run & deploy guide
-- `tests/test_streamlit.py` — handler tests
+- `tests/test_streamlit.py`, `tests/test_history.py` — handler + history tests
 
 **Legacy (Next.js):**
 
@@ -1337,7 +1348,9 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 | Example click | Auto-sends question |
 | Factual answer | Answer + source link + date shown |
 | Advisory question | Refusal + educational link shown |
-| Back to home | Conversation clears, welcome screen returns |
+| Ask guide | Welcome screen lists answerable topics + sample questions |
+| New chat / Back to home | Starts a fresh chat; previous chats stay in the sidebar |
+| Chat history | Previous chats persist across reload/restart and reopen on click |
 | Backend error | Friendly error, no crash |
 
 ### Phase 6 Checklist
@@ -1351,7 +1364,9 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 - [x] 6.7 Refusal styled differently
 - [x] 6.8 Loading and error states
 - [x] 6.9 End-to-end chat works (Streamlit in-process; legacy API contract via `tests/test_phase6.py`)
-- [x] 6.10 Back to home button resets the conversation
+- [x] 6.10 New chat / Back to home starts a fresh conversation
+- [x] 6.11 "What you can ask" guide lists answerable topics + sample questions
+- [x] 6.12 Persistent chat history with sidebar (`tests/test_history.py`)
 
 ---
 

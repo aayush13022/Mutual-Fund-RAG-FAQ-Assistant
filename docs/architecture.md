@@ -533,23 +533,63 @@ Minimal frontend aligned with the problem statement. The primary implementation 
 |---------|---------|
 | **Welcome message** | Explains facts-only scope and supported schemes (shown when chat is empty) |
 | **Disclaimer** | `Facts-only. No investment advice.` (sticky banner at top) |
+| **What you can ask** | Guide listing the answerable topics per fund + sample questions, so users know the supported scope |
 | **Example questions (3)** | Mix of scheme + fund management queries; auto-send on click |
-| **Back to home** | Resets the conversation and returns to the welcome screen; shown only once a chat has started |
+| **Chat history sidebar** | Persistent list of previous chats; switch between them, start a new chat, or clear all |
+| **New chat / Back to home** | Starts a fresh conversation while keeping previous chats in history |
 | **Chat input** | Free-text question |
 | **Response card** | Answer, source link, last-updated footer |
 | **Refusal card** | Refusal message + AMFI educational link |
 
-### 9.1.1 Streamlit Session State
+### 9.1.2 "What You Can Ask" Guide
 
-The Streamlit UI is stateful per browser session:
+To reduce user confusion about scope, the welcome screen lists the **answerable topics**
+(one per `section_type`, see [§10.2](#102-supported-query-domains)) alongside an expandable
+panel of **sample questions** and a short **"I can't help with"** list (advisory,
+comparison, prediction) mirroring the guardrail refusals in [§7.2](#72-intent-guardrail).
+
+| Topic shown | Backed by `section_type` |
+|-------------|--------------------------|
+| Expense ratio | `expense_ratio` |
+| Exit load | `exit_load` |
+| Minimum investment / SIP | `minimum_investment` |
+| Fund manager | `fund_management` |
+| Benchmark | `benchmark` |
+| Tax implications | `tax` |
+| Investment objective | `investment_objective` |
+| Overview (NAV, AUM, risk, category) | `overview` |
+| Fund house details | `fund_house` |
+
+The guide is defined in `stapp/constants.py` (`ASK_TOPICS`, `CANNOT_ASK`) so UI copy stays
+aligned with the retriever's supported sections.
+
+### 9.1.1 Streamlit Session State & Persistent History
+
+The Streamlit UI is stateful per browser session **and** persists conversations to disk so
+chats survive page reloads and process restarts.
 
 | Key | Purpose |
 |-----|---------|
-| `messages` | Ordered chat history (`user` / `assistant` entries, each assistant entry holds the `RAGResponse`) |
+| `conversations` | List of conversation objects (`id`, `title`, `created_at`, `messages`) |
+| `current_id` | Id of the conversation currently shown in the main panel |
 | `@st.cache_resource` warmup | Loads embedding models + LLM client once per process, shared across sessions |
 
-**Back to home** clears `messages`, which re-renders the welcome block, scheme list, and
-example chips.
+**Persistence layer** (`stapp/history.py`):
+
+| Function | Purpose |
+|----------|---------|
+| `load_conversations()` | Read saved chats from `data/chat_history.json` (returns `[]` if missing/corrupt) |
+| `save_conversations()` | Atomically write all non-empty conversations after every message |
+| `new_conversation()` | Create an empty conversation with a unique id + timestamp |
+| `conversation_title()` | Derive a short title from the first user message |
+
+Each message is serialized as JSON; assistant entries store the `RAGResponse` fields
+(`dataclasses.asdict`) and are rehydrated to `RAGResponse` on load. The history file path is
+configurable via the `CHAT_HISTORY_PATH` env var and is **git-ignored** (per-user runtime
+data). On a host without a persistent disk, mount a volume so history is retained.
+
+**New chat / Back to home** starts a fresh conversation without deleting prior chats; the
+**sidebar** lets users switch between previous chats or clear all history.
 
 ### 9.2 Suggested Example Questions
 
@@ -734,7 +774,8 @@ rag-project/
 ├── streamlit_app.py             # current UI + RAG entrypoint (single service)
 ├── stapp/
 │   ├── chat_handler.py          # guardrails + answer() wrapper for Streamlit
-│   └── constants.py             # UI copy (schemes, examples, disclaimer)
+│   ├── constants.py             # UI copy (schemes, examples, disclaimer)
+│   └── history.py               # persistent chat history (load/save conversations)
 ├── .streamlit/
 │   └── config.toml              # theme + server settings
 ├── ui/                          # legacy Next.js frontend (optional)
@@ -1044,8 +1085,10 @@ Next.js app wired to `POST /chat`; the current deployment uses a **Streamlit app
 | 6.6 | Response card | Answer + `source_url` + `last_updated_from_sources` |
 | 6.7 | Refusal styling | Distinct card + `educational_link` button |
 | 6.8 | Loading / error states | Spinner during generation; error message on failure |
-| 6.9 | Back to home | Reset conversation to welcome screen per [§9.1](#91-ui-elements) |
-| 6.10 | RAG integration | `handle_message()` in-process (legacy: `fetch(POST /chat)`) per [§9.3](#93-ui-to-rag-integration) |
+| 6.9 | New chat / Back to home | Start a fresh conversation, keeping history per [§9.1](#91-ui-elements) |
+| 6.10 | "What you can ask" guide | Answerable topics + samples per [§9.1.2](#912-what-you-can-ask-guide) |
+| 6.11 | Persistent chat history | Sidebar + disk persistence per [§9.1.1](#911-streamlit-session-state--persistent-history) |
+| 6.12 | RAG integration | `handle_message()` in-process (legacy: `fetch(POST /chat)`) per [§9.3](#93-ui-to-rag-integration) |
 
 ---
 
