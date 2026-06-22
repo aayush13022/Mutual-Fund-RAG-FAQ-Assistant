@@ -25,6 +25,23 @@ Same as the FastAPI backend (see `.env.example`):
 | `CHROMA_PERSIST_DIR` | Yes | `./data/chroma` locally |
 | `METADATA_DB_PATH` | Yes | `./data/metadata.db` locally |
 
+## Deploy on Streamlit Community Cloud
+
+1. [share.streamlit.io](https://share.streamlit.io) → **Create app** → pick the repo
+   (`aayush13022/rag-demo-1`), branch `main`, **main file** `streamlit_app.py`.
+2. **Advanced settings → Secrets**: add at least `GROQ_API_KEY = "gsk_..."`
+   (TOML format). Other config has sensible defaults; local `./data/...` paths work.
+3. Deploy. Health endpoint: `/_stcore/health`.
+
+> **Stale build / `ImportError` after a push:** Streamlit Community Cloud can cache a
+> previous checkout. If you see an import error for symbols that exist in the repo, open
+> **Manage app → ⋮ → Reboot app** (or **Clear cache**), or push a new commit to force a
+> clean re-clone.
+
+> **Memory:** the app loads a local BGE embedding model. Keep `BGE_KEEP_SINGLE_MODEL=true`.
+> If the instance runs out of memory, deploy on Railway (≥ 2 GB) instead, or switch to
+> `EMBEDDING_PROVIDER=openai` (needs `OPENAI_API_KEY`).
+
 ## Deploy on Railway
 
 The repo `Procfile` and `railway.toml` start Streamlit:
