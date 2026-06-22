@@ -7,10 +7,14 @@ export interface ChatResponse {
   educational_link?: string | null;
 }
 
-// Direct Railway URL avoids Vercel proxy timeouts on slow first requests.
-// Falls back to same-origin /api route handler when unset.
+// Production: always use same-origin /api proxy (server-side → Railway).
+// Avoids cross-origin CORS issues and Safari "Load failed" on direct Railway calls.
+// Local dev only: set NEXT_PUBLIC_API_URL=http://localhost:8000 to skip the proxy.
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL?.trim() || "/api"
+  process.env.NODE_ENV === "development" &&
+  process.env.NEXT_PUBLIC_API_URL?.trim()
+    ? process.env.NEXT_PUBLIC_API_URL.trim()
+    : "/api"
 ).replace(/\/$/, "");
 
 const CHAT_TIMEOUT_MS = 120_000;
@@ -22,9 +26,9 @@ function formatFetchError(error: unknown): string {
   if (error instanceof TypeError) {
     const text = error.message.toLowerCase();
     if (text.includes("load failed") || text.includes("failed to fetch")) {
-      return "Cannot reach the assistant API. On Vercel, set NEXT_PUBLIC_API_URL to your Railway URL and redeploy.";
+      return "Cannot reach the assistant API. On Vercel, set API_URL to your Railway URL and redeploy.";
     }
-    return "Cannot reach the assistant API. Check NEXT_PUBLIC_API_URL on Vercel and that Railway is running.";
+    return "Cannot reach the assistant API. Check API_URL on Vercel and that Railway is running.";
   }
   if (error instanceof Error && error.message.trim()) {
     return error.message;

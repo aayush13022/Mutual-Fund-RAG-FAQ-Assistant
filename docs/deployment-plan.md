@@ -8,6 +8,13 @@ This guide deploys the **Mutual Fund FAQ Assistant** with:
 | **Backend** (FastAPI) | [Railway](https://railway.app) | `https://your-api.up.railway.app` |
 | **Daily ingestion** | GitHub Actions (recommended) | `.github/workflows/daily-ingestion.yml` |
 
+**Live deployment:**
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://rag-demo-1-ycbh.vercel.app/ |
+| Backend | https://web-production-1e2cc.up.railway.app |
+
 ---
 
 ## Architecture
@@ -21,7 +28,9 @@ flowchart LR
     GH[GitHub Actions\nDaily Ingestion] -.->|optional separate path| Railway
 ```
 
-The UI calls the Railway API using `NEXT_PUBLIC_API_URL`. The API loads BGE embedding models and ChromaDB from the `data/` directory at startup.
+The UI calls the Railway API through a **same-origin `/api` proxy** on Vercel
+(`API_URL` env var). The API loads BGE embedding models and ChromaDB from the
+`data/` directory at startup.
 
 ---
 
@@ -178,20 +187,20 @@ curl https://your-api.up.railway.app/health
 
 ### 2.2 Set environment variables
 
-In **Settings → Environment Variables**, add **both**:
+In **Settings → Environment Variables**, add:
 
 | Variable | Value | Environments |
 |----------|-------|--------------|
-| `NEXT_PUBLIC_API_URL` | `https://your-api.up.railway.app` | Production, Preview, Development |
 | `API_URL` | `https://your-api.up.railway.app` | Production, Preview, Development |
 
 Use your Railway public URL — **no trailing slash**.
 
-`NEXT_PUBLIC_API_URL` lets the browser call Railway directly (avoids Vercel proxy
-timeouts on the first slow request). `API_URL` powers the `/api` fallback proxy.
+`API_URL` powers the `/api` server-side proxy (browser → Vercel → Railway).
+**Do not set `NEXT_PUBLIC_API_URL` in production** — it forces cross-origin
+browser calls to Railway and can cause Safari "Load failed" errors.
 
-**Important:** `NEXT_PUBLIC_*` variables are baked in at build time — you must
-**redeploy** after adding or changing them.
+`API_URL` is read at **runtime** by the `/api` route handler, so you can update
+it without a full rebuild (redeploy to pick up env changes).
 
 ### 2.3 Deploy
 
@@ -208,7 +217,7 @@ After deploy, open `https://your-app.vercel.app` and test a question like:
 ### Checklist
 
 - [ ] Railway `/health` returns `{"status":"ok"}`
-- [ ] `NEXT_PUBLIC_API_URL` on Vercel points to Railway URL
+- [ ] `API_URL` on Vercel points to Railway URL
 - [ ] `CORS_ORIGINS` on Railway includes your Vercel domain
 - [ ] `GROQ_API_KEY` is set on Railway
 - [ ] Corpus data exists (`/corpus/status` shows `active_version`)
@@ -226,8 +235,10 @@ Expected fields: `active_version`, `last_updated_from_sources`, `sources` (5 fun
 Open DevTools → Network. A chat message should `POST` to:
 
 ```
-https://your-api.up.railway.app/chat
+https://your-app.vercel.app/api/chat
 ```
+
+(Vercel proxies to Railway server-side.)
 
 If you see a CORS error, recheck `CORS_ORIGINS` on Railway and redeploy the API.
 
@@ -289,7 +300,6 @@ FETCH_TRUST_ENV=false
 ### Vercel (frontend)
 
 ```env
-NEXT_PUBLIC_API_URL=https://your-api.up.railway.app
 API_URL=https://your-api.up.railway.app
 ```
 
@@ -308,6 +318,13 @@ API_URL=https://your-api.up.railway.app
 ---
 
 ## Troubleshooting
+
+### "Load failed" / "Cannot reach the assistant API" on Vercel
+
+- **Remove `NEXT_PUBLIC_API_URL`** from Vercel env vars (or leave unset).
+- Set **`API_URL`** to your Railway URL and redeploy.
+- The browser should call `https://your-app.vercel.app/api/chat`, not Railway directly.
+- Verify proxy: `curl -X POST https://your-app.vercel.app/api/chat -H "Content-Type: application/json" -d '{"message":"test"}'`
 
 ### CORS error in browser
 
@@ -371,7 +388,7 @@ timeout. Fixes:
    └── Verify /health and /corpus/status
 3. Deploy frontend on Vercel
    ├── Root directory: ui
-   └── NEXT_PUBLIC_API_URL → Railway URL
+   └── API_URL → Railway URL (remove NEXT_PUBLIC_API_URL if set)
 4. Test end-to-end chat on Vercel URL
 5. Set up daily ingestion (Railway cron or manual)
 ```

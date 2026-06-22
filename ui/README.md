@@ -22,7 +22,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | FastAPI base URL for `POST /chat` |
+| `NEXT_PUBLIC_API_URL` | unset | Local dev only — direct calls to FastAPI (`http://localhost:8000`) |
+| `API_URL` | — | Vercel production — powers `/api` proxy to Railway |
 
 ## Features
 
