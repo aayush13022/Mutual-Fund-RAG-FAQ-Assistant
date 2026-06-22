@@ -303,8 +303,24 @@ NEXT_PUBLIC_API_URL=https://your-api.up.railway.app
 
 ### Slow first request
 
-- Normal: BGE models load on startup (~1–3 min on first deploy).
-- The API warms models in `lifespan`; wait for deploy logs to show `BGE embedding models warmed up`.
+- Normal: BGE models load on first request (~1–3 min on first deploy).
+- Warmup runs in a **background thread**, so `/health` responds immediately while
+  models load. Wait for logs to show `BGE embedding models warmed up`.
+
+### Restart loop on startup (logs repeat "Started server process" / reload models)
+
+This means Railway is killing the container during startup — usually **out of
+memory** from loading both BGE models, or the startup exceeds the health-check
+timeout. Fixes:
+
+- Warmup is already **non-blocking** (background thread) and **non-fatal**, so the
+  app boots and serves `/health` even if model loading is slow or fails.
+- On very low-memory instances, set `WARMUP_ON_STARTUP=false` to load models
+  lazily on the first request instead of at boot.
+- Upgrade to a plan with **≥ 2 GB RAM** (recommended for local BGE models).
+- Or switch to `EMBEDDING_PROVIDER=openai` (requires `OPENAI_API_KEY`) to avoid
+  loading BGE locally and drastically reduce memory use.
+- Set the health-check path to `/health` with a generous timeout in Railway.
 
 ### Chat returns empty / no retrieval
 
@@ -314,6 +330,7 @@ NEXT_PUBLIC_API_URL=https://your-api.up.railway.app
 ### Railway out of memory
 
 - Upgrade to a plan with **≥ 2 GB RAM**.
+- Set `WARMUP_ON_STARTUP=false` so both models don't load at boot.
 - Or switch to `EMBEDDING_PROVIDER=openai` (requires `OPENAI_API_KEY`) to avoid loading BGE locally.
 
 ### Vercel build fails
