@@ -10,8 +10,12 @@ restartPolicyMaxRetries = 3
 
 # Recommended Railway variables (set in dashboard Variables tab):
 # GROQ_API_KEY=gsk_...
+# LLM_PROVIDER=groq
+# LLM_MODEL=llama-3.1-8b-instant
+# EMBEDDING_PROVIDER=bge
 # CHROMA_PERSIST_DIR=/data/chroma
 # METADATA_DB_PATH=/data/metadata.db
+# CHAT_HISTORY_PATH=/data/chat_history.json
 # BGE_KEEP_SINGLE_MODEL=true
 # TOKENIZERS_PARALLELISM=false
 # OMP_NUM_THREADS=1

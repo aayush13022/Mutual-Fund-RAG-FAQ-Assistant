@@ -26,7 +26,6 @@ from stapp.history import (
     new_conversation,
     save_conversations,
 )
-from stapp.voice import voice_input
 
 configure_logging()
 
@@ -143,38 +142,12 @@ _CUSTOM_CSS = """
     font-size: 0.78rem;
     color: #7c87a8;
 }
-
-/* Place the small voice mic inside the chat input bar, left of the send button */
-.stApp [data-testid="stCustomComponentV1"] {
-    position: fixed;
-    bottom: 14px;
-    right: max(3.6rem, calc((100vw - 900px) / 2 + 3.4rem));
-    width: 44px !important;
-    height: 44px !important;
-    z-index: 1000;
-    background: transparent;
-}
-/* Reserve a little room at the input's right edge so text doesn't run under the mic */
-.stChatInput textarea { padding-right: 3.2rem; }
 </style>
 """
 
 
 def _inject_css() -> None:
     st.markdown(_CUSTOM_CSS, unsafe_allow_html=True)
-
-
-def _handle_voice_input() -> None:
-    """Process voice transcript from the custom mic component (once per utterance)."""
-    payload = voice_input(silence_ms=6000, key="voice_mic")
-    if not payload:
-        return
-    utterance_id = payload["id"]
-    if utterance_id == st.session_state.get("_last_voice_id"):
-        return
-    st.session_state._last_voice_id = utterance_id
-    _process_question(payload["text"])
-    st.rerun()
 
 
 def _render_header() -> None:
@@ -402,8 +375,6 @@ def main() -> None:
                     _render_assistant_message(response)
                 else:
                     st.markdown(message["content"])
-
-    _handle_voice_input()
 
     if prompt := st.chat_input("Ask a factual question about an HDFC scheme…"):
         _process_question(prompt)

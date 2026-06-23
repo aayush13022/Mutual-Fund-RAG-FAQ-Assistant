@@ -78,6 +78,11 @@ The system splits into two paths:
 1. **Offline ingestion path** — triggered daily by the scheduler; fetches, parses, chunks, embeds, and indexes corpus documents.
 2. **Online query path** — user question → guardrail check → RAG retrieval + generation → formatted response.
 
+> **Diagram note:** The `serving` subgraph above shows the **logical** query flow (UI → guardrail →
+> RAG → LLM). In the **current Streamlit deployment**, the UI and RAG run in one process — there
+> is no separate API hop. The Next.js + FastAPI split matches this diagram literally; see
+> [§12.0](#120-current-single-streamlit-service-railway).
+
 ---
 
 ## 3. Component Overview
@@ -89,12 +94,12 @@ The system splits into two paths:
 | **Vector Store** | Semantic search over document chunks | Built in Phase 2; always on |
 | **Retriever** | Scheme-aware retrieval with section boosting over the vector index | Built in Phase 3; used per request |
 | **Metadata Store** | Tracks source URLs, last-ingested timestamps, chunk versions | Built in Phase 2; always on |
-| **API Service** | Exposes `/chat` and health endpoints | Built in Phase 5; always on |
+| **API Service** (legacy) | Exposes `/chat` and health endpoints | Built in Phase 5; optional (split-stack deploy) |
 | **Intent Guardrail** | Classifies advisory vs factual queries | Built in Phase 5; per request |
 | **RAG Service** | Calls Phase 3 retriever, builds grounded prompts, post-processes answers | Built in Phase 4; runs per request |
 | **LLM** | Generates concise answer from retrieved context | Per request |
 | **Refusal Handler** | Returns compliant refusal + educational link | Built in Phase 5; per request |
-| **Chat UI** | Welcome message, example questions, disclaimer, chat | Built in Phase 6; always on |
+| **Chat UI** | Streamlit app: welcome, ask guide, history sidebar, disclaimer, chat | Built in Phase 6; always on |
 
 ---
 
@@ -531,37 +536,19 @@ Minimal frontend aligned with the problem statement. The primary implementation 
 
 | Element | Content |
 |---------|---------|
+| **Brand header** | Groww logo (`assets/groww-logo.png`) + gradient title + `HDFC · 5 schemes · Source: Groww` badge |
 | **Welcome message** | Explains facts-only scope and supported schemes (shown when chat is empty) |
-| **Disclaimer** | `Facts-only. No investment advice.` (sticky banner at top) |
-| **What you can ask** | Guide listing the answerable topics per fund + sample questions, so users know the supported scope |
+| **Disclaimer** | `Facts-only. No investment advice.` (styled banner at top) |
+| **What you can ask** | Two-column cards listing answerable topics per fund + expandable sample questions |
 | **Example questions (3)** | Mix of scheme + fund management queries; auto-send on click |
 | **Chat history sidebar** | Persistent list of previous chats; switch between them, start a new chat, or clear all |
 | **New chat / Back to home** | Starts a fresh conversation while keeping previous chats in history |
-| **Chat input** | Free-text question |
-| **Response card** | Answer, source link, last-updated footer |
+| **Chat input** | Free-text question only (no voice input) |
+| **Response card** | Answer, Groww source link, last-updated footer |
 | **Refusal card** | Refusal message + AMFI educational link |
 
-### 9.1.2 "What You Can Ask" Guide
-
-To reduce user confusion about scope, the welcome screen lists the **answerable topics**
-(one per `section_type`, see [§10.2](#102-supported-query-domains)) alongside an expandable
-panel of **sample questions** and a short **"I can't help with"** list (advisory,
-comparison, prediction) mirroring the guardrail refusals in [§7.2](#72-intent-guardrail).
-
-| Topic shown | Backed by `section_type` |
-|-------------|--------------------------|
-| Expense ratio | `expense_ratio` |
-| Exit load | `exit_load` |
-| Minimum investment / SIP | `minimum_investment` |
-| Fund manager | `fund_management` |
-| Benchmark | `benchmark` |
-| Tax implications | `tax` |
-| Investment objective | `investment_objective` |
-| Overview (NAV, AUM, risk, category) | `overview` |
-| Fund house details | `fund_house` |
-
-The guide is defined in `stapp/constants.py` (`ASK_TOPICS`, `CANNOT_ASK`) so UI copy stays
-aligned with the retriever's supported sections.
+> **Out of scope:** Voice / microphone input was explored but removed — text input only keeps
+> the UI reliable across browsers and Streamlit Cloud deployments.
 
 ### 9.1.1 Streamlit Session State & Persistent History
 
@@ -590,6 +577,28 @@ data). On a host without a persistent disk, mount a volume so history is retaine
 
 **New chat / Back to home** starts a fresh conversation without deleting prior chats; the
 **sidebar** lets users switch between previous chats or clear all history.
+
+### 9.1.2 "What You Can Ask" Guide
+
+To reduce user confusion about scope, the welcome screen lists the **answerable topics**
+(one per `section_type`, see [§10.2](#102-supported-query-domains)) alongside an expandable
+panel of **sample questions** and a short **"I can't help with"** list (advisory,
+comparison, prediction) mirroring the guardrail refusals in [§7.2](#72-intent-guardrail).
+
+| Topic shown | Backed by `section_type` |
+|-------------|--------------------------|
+| Expense ratio | `expense_ratio` |
+| Exit load | `exit_load` |
+| Minimum investment / SIP | `minimum_investment` |
+| Fund manager | `fund_management` |
+| Benchmark | `benchmark` |
+| Tax implications | `tax` |
+| Investment objective | `investment_objective` |
+| Overview (NAV, AUM, risk, category) | `overview` |
+| Fund house details | `fund_house` |
+
+The guide is defined in `stapp/constants.py` (`ASK_TOPICS`, `CANNOT_ASK`) so UI copy stays
+aligned with the retriever's supported sections.
 
 ### 9.2 Suggested Example Questions
 
@@ -772,12 +781,14 @@ rag-project/
 │   ├── vector_store.py
 │   └── metadata_store.py
 ├── streamlit_app.py             # current UI + RAG entrypoint (single service)
+├── assets/
+│   └── groww-logo.png           # Groww brand logo in header
 ├── stapp/
 │   ├── chat_handler.py          # guardrails + answer() wrapper for Streamlit
-│   ├── constants.py             # UI copy (schemes, examples, disclaimer)
+│   ├── constants.py             # UI copy (schemes, examples, disclaimer, ask guide)
 │   └── history.py               # persistent chat history (load/save conversations)
 ├── .streamlit/
-│   └── config.toml              # theme + server settings
+│   └── config.toml              # Groww-themed dark theme + server settings
 ├── ui/                          # legacy Next.js frontend (optional)
 │   └── ...
 ├── api/                         # legacy FastAPI backend (optional)
@@ -1077,18 +1088,18 @@ Next.js app wired to `POST /chat`; the current deployment uses a **Streamlit app
 
 | # | Task | Architecture component / reference |
 |---|------|-----------------------------------|
-| 6.1 | UI scaffold | Streamlit `streamlit_app.py` (legacy: `ui/` Next.js app) |
-| 6.2 | Welcome screen | List 5 supported scheme names |
-| 6.3 | Disclaimer banner | Sticky facts-only disclaimer per [§9.1](#91-ui-elements) |
+| 6.1 | UI scaffold | Streamlit `streamlit_app.py` with Groww branding (legacy: `ui/` Next.js) |
+| 6.2 | Welcome screen | List 5 supported scheme names (shown when chat empty) |
+| 6.3 | Disclaimer banner | Styled top banner; never hidden per [§9.1](#91-ui-elements) |
 | 6.4 | Example question chips | 3 clickable examples per [§9.2](#92-suggested-example-questions) |
-| 6.5 | Chat message list | Scrollable user/bot history (`st.session_state.messages`) |
-| 6.6 | Response card | Answer + `source_url` + `last_updated_from_sources` |
-| 6.7 | Refusal styling | Distinct card + `educational_link` button |
+| 6.5 | Chat message list | Scrollable user/bot history via `stapp/history.py` conversation store |
+| 6.6 | Response card | Answer + Groww `source_url` + `last_updated_from_sources` |
+| 6.7 | Refusal styling | `st.warning` + `educational_link` button |
 | 6.8 | Loading / error states | Spinner during generation; error message on failure |
-| 6.9 | New chat / Back to home | Start a fresh conversation, keeping history per [§9.1](#91-ui-elements) |
-| 6.10 | "What you can ask" guide | Answerable topics + samples per [§9.1.2](#912-what-you-can-ask-guide) |
-| 6.11 | Persistent chat history | Sidebar + disk persistence per [§9.1.1](#911-streamlit-session-state--persistent-history) |
-| 6.12 | RAG integration | `handle_message()` in-process (legacy: `fetch(POST /chat)`) per [§9.3](#93-ui-to-rag-integration) |
+| 6.9 | RAG integration | In-process `handle_message()` per [§9.3](#93-ui-to-rag-integration) |
+| 6.10 | New chat / Back to home | Fresh conversation; prior chats retained per [§9.1.1](#911-streamlit-session-state--persistent-history) |
+| 6.11 | "What you can ask" guide | `ASK_TOPICS` / `CANNOT_ASK` per [§9.1.2](#912-what-you-can-ask-guide) |
+| 6.12 | Persistent chat history | Sidebar + `CHAT_HISTORY_PATH` disk persistence per [§9.1.1](#911-streamlit-session-state--persistent-history) |
 
 ---
 

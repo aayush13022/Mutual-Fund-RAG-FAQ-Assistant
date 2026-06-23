@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
-
 import pytest
 
 from rag.models import RAGResponse
@@ -14,9 +12,7 @@ def history(tmp_path, monkeypatch):
     monkeypatch.setenv("CHAT_HISTORY_PATH", str(tmp_path / "chat_history.json"))
     import stapp.history as history_module
 
-    importlib.reload(history_module)
-    yield history_module
-    importlib.reload(history_module)
+    return history_module
 
 
 def test_new_conversation_has_unique_ids(history):

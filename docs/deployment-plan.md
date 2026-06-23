@@ -1,6 +1,6 @@
 # Deployment Plan: Streamlit on Railway
 
-The **Mutual Fund FAQ Assistant** now runs as a **single Streamlit app** — the UI and
+The **Mutual Fund FAQ Assistant** runs as a **single Streamlit app** — the UI and
 the RAG backend live in one Python process. No separate Next.js frontend or FastAPI
 backend is required.
 
@@ -15,6 +15,22 @@ backend is required.
 
 ---
 
+## What ships
+
+The deployed app includes:
+
+| Feature | Details |
+|---------|---------|
+| **Groww branding** | Logo (`assets/groww-logo.png`), teal/blue theme (`.streamlit/config.toml` + custom CSS) |
+| **Disclaimer** | `Facts-only. No investment advice.` banner on every screen |
+| **Welcome + ask guide** | 5 supported schemes, 9 answerable topics, sample questions, "I can't help with" list |
+| **Example questions** | 3 clickable chips that auto-send |
+| **Chat** | Text input only — voice/mic was removed for cross-browser reliability |
+| **Persistent history** | Sidebar lists previous chats; saved to `CHAT_HISTORY_PATH` on disk |
+| **New chat / Back to home** | Starts a fresh conversation without deleting prior chats |
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -23,6 +39,7 @@ flowchart LR
     Streamlit --> RAG[rag.generator.answer]
     RAG --> Chroma[(ChromaDB\n+ metadata.db)]
     RAG --> Groq[Groq LLM API]
+    Streamlit --> History[(chat_history.json)]
     GH[GitHub Actions / Cron\nDaily Ingestion] -.-> Chroma
 ```
 
@@ -32,6 +49,10 @@ Streamlit calls the RAG pipeline in-process:
 ```text
 streamlit_app.py → stapp/chat_handler.py (guardrails) → rag/generator.py (retrieve + LLM)
 ```
+
+**Model warmup:** Streamlit loads BGE embeddings and the LLM client via
+`@st.cache_resource` on first page load. The `WARMUP_ON_STARTUP` env var applies only
+to the legacy FastAPI server (`api/main.py`), not the Streamlit app.
 
 ---
 
@@ -64,6 +85,8 @@ If the corpus is missing, build it once:
 ```bash
 python -m scheduler --once
 ```
+
+Chat history is written to `./data/chat_history.json` by default (git-ignored).
 
 ---
 
@@ -104,7 +127,7 @@ In **Variables**, add:
 | `CHROMA_PERSIST_DIR` | `/data/chroma` | Yes (with volume) |
 | `METADATA_DB_PATH` | `/data/metadata.db` | Yes (with volume) |
 | `CHAT_HISTORY_PATH` | `/data/chat_history.json` | Yes (with volume — persists chat history) |
-| `BGE_KEEP_SINGLE_MODEL` | `true` | Recommended (lower memory) |
+| `BGE_KEEP_SINGLE_MODEL` | `true` | Recommended (lower memory; auto-on Railway if unset) |
 | `TOKENIZERS_PARALLELISM` | `false` | Recommended |
 | `OMP_NUM_THREADS` | `1` | Recommended |
 | `LOG_LEVEL` | `INFO` | Optional |
@@ -114,16 +137,16 @@ In **Variables**, add:
 >
 > **Note:** Use `/data/...` paths when attaching a Railway Volume (step 4). Without a
 > volume, use `./data/chroma`, `./data/metadata.db`, and `./data/chat_history.json` — but
-> this data (including saved chat history) resets on every redeploy.
+> corpus and chat history reset on every redeploy.
 
 ### 4. Attach a persistent volume (recommended)
 
-The corpus (`data/chroma/`, `data/metadata.db`) must survive redeploys.
+The corpus (`data/chroma/`, `data/metadata.db`) and chat history must survive redeploys.
 
 1. Railway service → **Volumes** → **Add Volume**.
 2. Mount path: `/data`
 3. Set `CHROMA_PERSIST_DIR=/data/chroma`, `METADATA_DB_PATH=/data/metadata.db`, and
-   `CHAT_HISTORY_PATH=/data/chat_history.json` (so saved chats survive redeploys).
+   `CHAT_HISTORY_PATH=/data/chat_history.json`.
 4. On first deploy, copy bundled demo data into the volume (one-time, via Railway shell):
 
 ```bash
@@ -142,6 +165,27 @@ python -m scheduler --once
 1. Railway service → **Settings → Networking** → **Generate Domain**.
 2. Copy the URL, e.g. `https://rag-demo-1-production.up.railway.app`.
 3. Open it in a browser. **First load** may take 2–5 minutes while BGE models download.
+
+---
+
+## Alternative: Streamlit Community Cloud
+
+For demos without managing infrastructure:
+
+1. [share.streamlit.io](https://share.streamlit.io) → **Create app** → repo branch `main`,
+   **main file** `streamlit_app.py`.
+2. **Secrets** (TOML): at minimum `GROQ_API_KEY = "gsk_..."`.
+3. Deploy. Health endpoint: `/_stcore/health`.
+
+**Limitations:**
+
+- Less RAM than Railway — BGE models may OOM. Keep `BGE_KEEP_SINGLE_MODEL=true` or use
+  `EMBEDDING_PROVIDER=openai` with `OPENAI_API_KEY`.
+- No persistent volume — chat history and corpus reset when the app reboots unless you
+  bundle demo data in the repo.
+- After a push, use **Manage app → Reboot app** if you see stale `ImportError`s.
+
+See [streamlit.md](./streamlit.md) for more detail.
 
 ---
 
@@ -191,6 +235,8 @@ LOG_LEVEL=INFO
 FETCH_TRUST_ENV=false
 ```
 
+Copy from `.env.example` for local development (uses `./data/...` paths).
+
 ---
 
 ## Post-Deployment Verification
@@ -198,10 +244,13 @@ FETCH_TRUST_ENV=false
 | Test | Action | Expected |
 |------|--------|----------|
 | App health | Open `https://your-app.up.railway.app/_stcore/health` | `ok` |
-| App loads | Open the app URL | Disclaimer + welcome + 5 schemes |
+| App loads | Open the app URL | Groww header + disclaimer + welcome + 5 schemes |
+| Ask guide | Check welcome screen | 9 answerable topics + expandable sample questions |
 | Chat works | Ask a factual question | Answer + Groww source link |
 | Advisory refused | "Should I invest in HDFC Defence?" | Refusal + AMFI link |
 | Out-of-context | "What is the weather?" | "I could not find this information..." |
+| Chat history | Ask a question, reload page | Previous chat appears in sidebar |
+| New chat | Click **New chat** or **← Back to home** | Fresh welcome screen; old chat stays in sidebar |
 
 ---
 
@@ -234,6 +283,11 @@ FETCH_TRUST_ENV=false
 - Set `CHAT_HISTORY_PATH=/data/chat_history.json` and attach a `/data` volume.
 - Without a volume, the history file lives on ephemeral storage and resets each deploy.
 
+### Stale build / ImportError (Streamlit Cloud)
+
+- Open **Manage app → Reboot app** or push a new commit to force a clean build.
+- Common after adding new `stapp/` modules that Cloud has not re-cloned yet.
+
 ### Railway out of memory
 
 - Upgrade to a plan with **≥ 2 GB RAM**.
@@ -248,10 +302,10 @@ FETCH_TRUST_ENV=false
 1. Push code to GitHub
 2. Run locally to confirm corpus + chat work
 3. Deploy on Railway
-   ├── Set env vars (GROQ_API_KEY, Chroma paths, BGE flags)
+   ├── Set env vars (GROQ_API_KEY, Chroma paths, CHAT_HISTORY_PATH, BGE flags)
    ├── Attach /data volume + seed corpus
    ├── Generate public domain
-   └── Verify /_stcore/health and a chat question
+   └── Verify /_stcore/health, a chat question, and sidebar history
 4. Set up daily ingestion (Railway cron or manual)
 ```
 
@@ -273,6 +327,6 @@ This path is optional. The Streamlit app above is the recommended single-service
 ## Related docs
 
 - [streamlit.md](./streamlit.md) — Streamlit app run & deploy details
+- [architecture.md](./architecture.md) — system design (§9 Chat UI, §12 Deployment)
 - [scheduler.md](./scheduler.md) — daily ingestion worker
-- [implementation-plan.md](./implementation-plan.md) — Phase 7 scheduler details
-- [architecture.md](./architecture.md) — system design
+- [implementation-plan.md](./implementation-plan.md) — Phase 6 (UI) and Phase 7 (scheduler)

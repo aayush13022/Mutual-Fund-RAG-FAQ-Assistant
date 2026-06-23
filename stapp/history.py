@@ -11,9 +11,19 @@ from pathlib import Path
 
 from rag.models import RAGResponse
 
-HISTORY_PATH = Path(os.getenv("CHAT_HISTORY_PATH", "data/chat_history.json"))
-
 _TITLE_MAX = 50
+
+
+def _history_path() -> Path:
+    """Resolve chat history file path from env (supports .env via settings loader)."""
+    from config.settings import PROJECT_ROOT, get_settings
+
+    get_settings()
+    raw = os.getenv("CHAT_HISTORY_PATH", "data/chat_history.json")
+    path = Path(raw)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return path
 
 
 def _serialize_message(message: dict) -> dict:
@@ -56,10 +66,11 @@ def conversation_title(message: str) -> str:
 
 def load_conversations() -> list[dict]:
     """Load saved conversations from disk; return [] if missing or unreadable."""
-    if not HISTORY_PATH.exists():
+    history_path = _history_path()
+    if not history_path.exists():
         return []
     try:
-        raw = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+        raw = json.loads(history_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError, ValueError):
         return []
     if not isinstance(raw, list):
@@ -85,7 +96,8 @@ def load_conversations() -> list[dict]:
 
 def save_conversations(conversations: list[dict]) -> None:
     """Persist conversations to disk atomically. Empty conversations are skipped."""
-    HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    history_path = _history_path()
+    history_path.parent.mkdir(parents=True, exist_ok=True)
 
     payload = [
         {
@@ -98,6 +110,6 @@ def save_conversations(conversations: list[dict]) -> None:
         if conv.get("messages")
     ]
 
-    tmp = HISTORY_PATH.with_suffix(".tmp")
+    tmp = history_path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(HISTORY_PATH)
+    tmp.replace(history_path)

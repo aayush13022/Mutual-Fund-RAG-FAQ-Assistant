@@ -1257,10 +1257,12 @@ Build a simple chat page: welcome message, disclaimer, 3 example questions, and 
 > **Update — Streamlit migration:** The UI was originally built in Next.js (`ui/`) calling
 > `POST /chat`. The current deployment is a **single Streamlit app** (`streamlit_app.py`)
 > that calls the RAG pipeline **in-process** via `stapp/chat_handler.py` — no separate API,
-> no CORS. It adds a **"What you can ask"** guide (answerable topics + sample questions), a
-> **New chat / Back to home** action, and **persistent chat history** — conversations are
-> saved to `data/chat_history.json` (via `stapp/history.py`) and browsable from a sidebar, so
-> chats survive reloads and restarts. The Next.js + FastAPI stack remains in the repo as the
+> no CORS. It adds Groww branding (logo + themed UI), a **"What you can ask"** guide
+> (answerable topics + sample questions), a **New chat / Back to home** action, and
+> **persistent chat history** — conversations are saved to `data/chat_history.json` (via
+> `stapp/history.py`) and browsable from a sidebar, so chats survive reloads and restarts.
+> Voice / microphone input was explored but **removed** to keep the UI reliable across
+> browsers and Streamlit Cloud. The Next.js + FastAPI stack remains in the repo as the
 > legacy path. See [streamlit.md](./streamlit.md) and [deployment-plan.md](./deployment-plan.md).
 
 ### Goal & Scope
@@ -1274,6 +1276,8 @@ Maps to [architecture.md §9](./architecture.md#9-chat-ui) and [problemStatement
 
 ```
 ┌─────────────────────────────────────────────┐
+│  [Groww logo]  HDFC Mutual Fund FAQ          │
+│  HDFC · 5 schemes · Source: Groww            │
 │  Disclaimer: Facts-only. No advice.          │
 ├──────────────────────────┬──────────────────┤
 │  Title          [← Back to home] (after chat)│
@@ -1297,22 +1301,24 @@ Sidebar:  ➕ New chat
           🗑 Clear all history
 ```
 
+> **Out of scope:** Voice / microphone input — text input only.
+
 ### Tasks
 
 | # | Task | Implementation notes |
 |---|------|-------------------|
-| 6.1 | Scaffold UI | Streamlit `streamlit_app.py` (legacy: `ui/` Next.js + Tailwind) |
+| 6.1 | Scaffold UI | Streamlit `streamlit_app.py` with Groww branding (legacy: `ui/` Next.js + Tailwind) |
 | 6.2 | Welcome screen | List 5 supported scheme names (shown when chat empty) |
-| 6.3 | Disclaimer banner | Sticky top; never hidden |
+| 6.3 | Disclaimer banner | Styled top banner; never hidden |
 | 6.4 | Example chips (3) | Click → auto-send question |
-| 6.5 | Chat messages | Scrollable list via `st.session_state.messages` |
-| 6.6 | Response card | Answer + clickable `source_url` + `last_updated_from_sources` |
+| 6.5 | Chat messages | Scrollable list via `stapp/history.py` conversation store |
+| 6.6 | Response card | Answer + clickable Groww `source_url` + `last_updated_from_sources` |
 | 6.7 | Refusal styling | `st.warning` + `educational_link` button |
 | 6.8 | Loading / error | Spinner during generation; error message on failure |
 | 6.9 | RAG integration | In-process `handle_message()` (legacy: `fetch(POST /chat)`) |
 | 6.10 | New chat / Back to home | Starts a fresh conversation while keeping previous chats |
-| 6.11 | "What you can ask" guide | List answerable topics + sample questions; `ASK_TOPICS` / `CANNOT_ASK` in `stapp/constants.py` |
-| 6.12 | Persistent chat history | Sidebar lists previous chats; saved to `data/chat_history.json` via `stapp/history.py` |
+| 6.11 | "What you can ask" guide | `ASK_TOPICS` / `CANNOT_ASK` in `stapp/constants.py` |
+| 6.12 | Persistent chat history | Sidebar + `CHAT_HISTORY_PATH` via `stapp/history.py` |
 
 ### UI Copy
 
@@ -1328,11 +1334,12 @@ Sidebar:  ➕ New chat
 
 **Current (Streamlit):**
 
-- `streamlit_app.py` — UI + in-process RAG entrypoint
+- `streamlit_app.py` — UI + in-process RAG entrypoint (Groww-themed CSS)
+- `assets/groww-logo.png` — Groww logo in header
 - `stapp/chat_handler.py` — guardrails + `answer()` wrapper
 - `stapp/constants.py` — UI copy (schemes, examples, disclaimer, ask guide)
 - `stapp/history.py` — persistent chat history (load/save conversations)
-- `.streamlit/config.toml` — theme + server settings
+- `.streamlit/config.toml` — Groww-themed dark theme + server settings
 - `docs/streamlit.md` — run & deploy guide
 - `tests/test_streamlit.py`, `tests/test_history.py` — handler + history tests
 
@@ -1344,7 +1351,7 @@ Sidebar:  ➕ New chat
 
 | Test | Expected |
 |------|----------|
-| Page load | Welcome + disclaimer + 3 examples visible |
+| Page load | Welcome + Groww header + disclaimer + 3 examples visible |
 | Example click | Auto-sends question |
 | Factual answer | Answer + source link + date shown |
 | Advisory question | Refusal + educational link shown |
@@ -1355,7 +1362,7 @@ Sidebar:  ➕ New chat
 
 ### Phase 6 Checklist
 
-- [x] 6.1 UI scaffolded (Streamlit; legacy Next.js + Tailwind retained)
+- [x] 6.1 UI scaffolded (Streamlit + Groww branding; legacy Next.js retained)
 - [x] 6.2 Welcome lists 5 schemes
 - [x] 6.3 Disclaimer always visible
 - [x] 6.4 Example chips work
