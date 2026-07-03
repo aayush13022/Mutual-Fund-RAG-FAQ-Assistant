@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mutual Fund RAG FAQ Assistant — Project Showcase</title>
+  <style>
+    :root {
+      --groww-teal: #00d09c;
+      --groww-blue: #5367ff;
+      --bg: #0b1020;
+      --card: #151c30;
+      --text: #eef2ff;
+      --muted: #9aa5c4;
+      --accent-warm: #ffd9a8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #1a1f35;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 24px;
+      padding: 18mm 20mm;
+      background: var(--bg);
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page:last-child { page-break-after: auto; }
+
+    .glow {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .glow-teal { background: var(--groww-teal); top: -80px; right: -60px; }
+    .glow-blue { background: var(--groww-blue); bottom: -100px; left: -80px; }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--groww-teal);
+      background: rgba(0, 208, 156, 0.12);
+      border: 1px solid rgba(0, 208, 156, 0.35);
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, var(--groww-blue), var(--groww-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #cdd6ff;
+      margin: 22px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid rgba(0, 208, 156, 0.35);
+    }
+
+    h3 {
+      font-size: 14px;
+      color: var(--groww-teal);
+      margin: 14px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    p, li { font-size: 13px; color: #dce3ff; }
+    .subtitle { font-size: 16px; color: var(--muted); margin-bottom: 28px; max-width: 90%; }
+    .meta { font-size: 12px; color: var(--muted); margin-top: 24px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .card h4 {
+      font-size: 13px;
+      color: #cdd6ff;
+      margin-bottom: 8px;
+    }
+
+    ul { padding-left: 18px; }
+    li { margin-bottom: 6px; }
+
+    .highlight {
+      background: rgba(255, 170, 60, 0.1);
+      border: 1px solid rgba(255, 170, 60, 0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      color: var(--accent-warm);
+      font-size: 12px;
+    }
+
+    .flow {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.7;
+      color: #b8c4e8;
+      border: 1px solid rgba(83, 103, 255, 0.25);
+      white-space: pre;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    th {
+      color: var(--groww-teal);
+      font-weight: 600;
+      background: rgba(0, 208, 156, 0.06);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(83, 103, 255, 0.15);
+      border: 1px solid rgba(83, 103, 255, 0.3);
+      color: #dce3ff;
+    }
+
+    .footer-note {
+      position: absolute;
+      bottom: 14mm;
+      left: 20mm;
+      right: 20mm;
+      font-size: 10px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+    }
+
+    .cover-center {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 240mm;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 16px 10px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .stat .num {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--groww-teal);
+    }
+
+    .stat .lbl {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .link {
+      color: var(--groww-teal);
+      word-break: break-all;
+    }
+
+    @media print {
+      body { background: white; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+      }
+      .no-print { display: none; }
+    }
+
+    @page { size: A4; margin: 0; }
+
+    .print-hint {
+      max-width: 210mm;
+      margin: 16px auto;
+      padding: 12px 16px;
+      background: #fff3cd;
+      color: #664d03;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <p class="print-hint no-print">
+    <strong>Export to PDF:</strong> Open this file in Chrome → File → Print → Save as PDF → Upload to LinkedIn.
+  </p>
+
+  <!-- PAGE 1: COVER -->
+  <section class="page">
+    <div class="glow glow-teal"></div>
+    <div class="glow glow-blue"></div>
+    <div class="cover-center">
+      <span class="badge">AI · RAG · FinTech Project</span>
+      <h1>Mutual Fund RAG<br>FAQ Assistant</h1>
+      <p class="subtitle">
+        A facts-only, source-backed AI assistant for HDFC mutual fund schemes —
+        built with Retrieval-Augmented Generation, guardrails, and production deployment.
+      </p>
+
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num">5</div>
+          <div class="lbl">HDFC Schemes</div>
+        </div>
+        <div class="stat">
+          <div class="num">9</div>
+          <div class="lbl">Query Domains</div>
+        </div>
+        <div class="stat">
+          <div class="num">1</div>
+          <div class="lbl">Source Per Answer</div>
+        </div>
+      </div>
+
+      <div class="tag-row" style="margin-top: 28px;">
+        <span class="tag">Python</span>
+        <span class="tag">Streamlit</span>
+        <span class="tag">ChromaDB</span>
+        <span class="tag">BGE Embeddings</span>
+        <span class="tag">Groq LLM</span>
+        <span class="tag">Railway</span>
+      </div>
+
+      <p class="meta">
+        <strong>Author:</strong> Aayush Tayal &nbsp;|&nbsp;
+        <strong>GitHub:</strong>
+        <span class="link">github.com/aayush13022/Mutual-Fund-RAG-FAQ-Assistant</span>
+      </p>
+    </div>
+    <div class="footer-note">Facts-only. No investment advice. Data sourced from allowlisted Groww fund pages.</div>
+  </section>
+
+  <!-- PAGE 2: PROBLEM & SOLUTION -->
+  <section class="page">
+    <div class="glow glow-blue"></div>
+    <h2>The Problem</h2>
+    <p>
+      Investors and learners often need quick, factual answers about mutual funds — expense ratio,
+      exit load, fund manager, benchmark, minimum SIP, and more. Generic AI chatbots can sound
+      confident but may hallucinate, give investment advice, or answer without verifiable sources.
+    </p>
+
+    <div class="highlight">
+      ⚠️ Financial AI needs accuracy, scope control, and transparency — not just a large language model.
+    </div>
+
+    <h2>The Solution</h2>
+    <p>
+      I built a <strong>RAG-based FAQ assistant</strong> scoped to <strong>5 HDFC Mutual Fund schemes</strong>
+      on Groww. The system retrieves relevant facts from a vector database, generates concise answers
+      with a Groq LLM, and cites exactly one Groww source link per response.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4>✅ What it answers</h4>
+        <ul>
+          <li>Expense ratio & exit load</li>
+          <li>Fund manager & benchmark</li>
+          <li>NAV, AUM, risk category</li>
+          <li>Minimum SIP / lumpsum</li>
+          <li>Tax & investment objective</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>🚫 What it refuses</h4>
+        <ul>
+          <li>Investment advice</li>
+          <li>Buy / sell / hold tips</li>
+          <li>Return predictions</li>
+          <li>Fund comparisons</li>
+          <li>Out-of-scope questions</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Supported Schemes</h2>
+    <table>
+      <tr><th>#</th><th>Scheme</th></tr>
+      <tr><td>1</td><td>HDFC Mid Cap Fund Direct Growth</td></tr>
+      <tr><td>2</td><td>HDFC Large Cap Fund Direct Growth</td></tr>
+      <tr><td>3</td><td>HDFC Small Cap Fund Direct Growth</td></tr>
+      <tr><td>4</td><td>HDFC Gold ETF Fund of Fund Direct Plan Growth</td></tr>
+      <tr><td>5</td><td>HDFC Defence Fund Direct Growth</td></tr>
+    </table>
+
+    <div class="footer-note">Page 2 — Problem & Solution</div>
+  </section>
+
+  <!-- PAGE 3: FEATURES & ARCHITECTURE -->
+  <section class="page">
+    <div class="glow glow-teal"></div>
+    <h2>Key Features</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h4>User Experience</h4>
+        <ul>
+          <li>Streamlit chat UI with Groww branding</li>
+          <li>"What you can ask" guide + sample questions</li>
+          <li>3 example question chips (auto-send)</li>
+          <li>Persistent chat history sidebar</li>
+          <li>New chat / Back to home actions</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>AI & Data Pipeline</h4>
+        <ul>
+          <li>Daily ingestion from allowlisted Groww URLs</li>
+          <li>Section-aware chunking & embedding</li>
+          <li>Scheme-aware retrieval with section boost</li>
+          <li>Intent guardrails before RAG</li>
+          <li>Atomic blue/green index swap on re-ingestion</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Architecture</h2>
+    <div class="flow">User Browser
+    │
+    ▼
+Streamlit App (UI + RAG in one process)
+    │
+    ▼
+stapp/chat_handler.py  ──► Guardrails (refuse advice / comparison)
+    │
+    ▼
+rag/generator.py
+    ├── Scheme-aware retrieval (ChromaDB)
+    ├── Section-boosted context selection
+    └── Groq LLM answer generation
+    │
+    ▼
+Response: Answer + Groww source link + disclaimer</div>
+
+    <h2>Design Principles</h2>
+    <table>
+      <tr><th>Principle</th><th>Implementation</th></tr>
+      <tr><td>Accuracy over intelligence</td><td>Answers grounded in retrieved chunks only</td></tr>
+      <tr><td>Facts-only</td><td>Guardrails block advisory queries before retrieval</td></tr>
+      <tr><td>Source transparency</td><td>Exactly one citation link per answer</td></tr>
+      <tr><td>Fresh data</td><td>Daily scheduler refreshes corpus from Groww</td></tr>
+      <tr><td>Minimal surface</td><td>No auth, no PII, no portfolio features</td></tr>
+    </table>
+
+    <div class="footer-note">Page 3 — Features & Architecture</div>
+  </section>
+
+  <!-- PAGE 4: TECH STACK & DEPLOYMENT -->
+  <section class="page">
+    <div class="glow glow-blue"></div>
+    <h2>Tech Stack</h2>
+    <table>
+      <tr><th>Layer</th><th>Technology</th></tr>
+      <tr><td>Language</td><td>Python 3.11+</td></tr>
+      <tr><td>App / UI</td><td>Streamlit</td></tr>
+      <tr><td>Vector Database</td><td>ChromaDB</td></tr>
+      <tr><td>Embeddings</td><td>BGE (small + large, chunk-aware routing)</td></tr>
+      <tr><td>LLM</td><td>Groq (llama-3.1-8b-instant / llama-3.3-70b)</td></tr>
+      <tr><td>Metadata</td><td>SQLite</td></tr>
+      <tr><td>Ingestion</td><td>httpx, BeautifulSoup, APScheduler</td></tr>
+      <tr><td>Deployment</td><td>Railway (Procfile + railway.toml)</td></tr>
+      <tr><td>CI / Cron</td><td>GitHub Actions (daily ingestion)</td></tr>
+      <tr><td>Legacy stack</td><td>FastAPI + Next.js (reference)</td></tr>
+    </table>
+
+    <h3>Built with</h3>
+    <div class="tag-row">
+      <span class="tag">Python</span>
+      <span class="tag">Streamlit</span>
+      <span class="tag">ChromaDB</span>
+      <span class="tag">BGE</span>
+      <span class="tag">Groq</span>
+      <span class="tag">SQLite</span>
+      <span class="tag">APScheduler</span>
+      <span class="tag">FastAPI</span>
+      <span class="tag">Next.js</span>
+      <span class="tag">Railway</span>
+      <span class="tag">GitHub Actions</span>
+    </div>
+
+    <h2>Deployment</h2>
+    <p>
+      The app ships as a <strong>single Streamlit service</strong> on Railway. The browser talks
+      only to Streamlit — no CORS, no separate API hop. A persistent <code>/data</code> volume
+      stores the ChromaDB index, metadata DB, and chat history across redeploys.
+    </p>
+
+    <div class="card" style="margin-top: 12px;">
+      <h4>Example deployment command</h4>
+      <p style="font-family: monospace; font-size: 11px; color: #b8c4e8;">
+        streamlit run streamlit_app.py --server.port=$PORT --server.address=0.0.0.0
+      </p>
+    </div>
+
+    <h2>Example Interaction</h2>
+    <div class="card">
+      <p><strong>User:</strong> What is the expense ratio of HDFC Defence Fund Direct Growth?</p>
+      <p style="margin-top: 8px;"><strong>Assistant:</strong> The expense ratio is 0.81% (Direct Growth).</p>
+      <p style="margin-top: 8px; font-size: 11px; color: var(--muted);">
+        Source: groww.in/mutual-funds/hdfc-defence-fund-direct-growth · Last updated from sources · Facts-only. No investment advice.
+      </p>
+    </div>
+
+    <div class="footer-note">Page 4 — Tech Stack & Deployment</div>
+  </section>
+
+  <!-- PAGE 5: LEARNINGS & LINKS -->
+  <section class="page">
+    <div class="glow glow-teal"></div>
+    <h2>What I Learned</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Technical</h4>
+        <ul>
+          <li>End-to-end RAG: ingest → chunk → embed → retrieve → generate</li>
+          <li>Retrieval quality matters more than model size</li>
+          <li>Guardrails should run <em>before</em> the LLM call</li>
+          <li>Deployment details (memory, volumes, warmup) affect UX</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Product</h4>
+        <ul>
+          <li>Clear scope reduces user confusion and hallucinations</li>
+          <li>Source links build trust in financial AI</li>
+          <li>Simple UI + strict backend = better demo</li>
+          <li>Compliance-first design is a feature, not a limitation</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Project Highlights</h2>
+    <ul>
+      <li>Full ingestion pipeline with allowlisted Groww corpus</li>
+      <li>Scheme-aware retrieval with section-type boosting</li>
+      <li>Chunk-aware BGE-small / BGE-large embedding routing</li>
+      <li>Persistent chat history with sidebar navigation</li>
+      <li>Comprehensive docs: architecture, implementation plan, deployment guide</li>
+      <li>Test suite with pytest (handler, history, retrieval, API)</li>
+    </ul>
+
+    <h2>Links</h2>
+    <table>
+      <tr><th>Resource</th><th>URL</th></tr>
+      <tr>
+        <td>GitHub Repository</td>
+        <td class="link">https://github.com/aayush13022/Mutual-Fund-RAG-FAQ-Assistant</td>
+      </tr>
+      <tr>
+        <td>Live Demo</td>
+        <td class="link">Deploy on Railway / Streamlit Cloud (see repo README)</td>
+      </tr>
+    </table>
+
+    <div class="highlight" style="margin-top: 20px;">
+      This assistant provides factual information only. It does not provide investment advice,
+      recommendations, predictions, or financial planning guidance.
+    </div>
+
+    <p class="meta" style="margin-top: 24px;">
+      <strong>Aayush Tayal</strong> — Mutual Fund RAG FAQ Assistant<br>
+      Built with: Python | Streamlit | ChromaDB | BGE | Groq | SQLite | Railway
+    </p>
+
+    <div class="footer-note">Page 5 — Learnings & Contact</div>
+  </section>
+
+</body>
+</html>
